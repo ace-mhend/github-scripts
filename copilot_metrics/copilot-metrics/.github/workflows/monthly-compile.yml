@@ -1,0 +1,61 @@
+name: Monthly Compile
+on:
+  schedule:
+    # Run at 2 AM UTC on the 1st of every month
+    - cron: '0 2 1 * *'
+  workflow_dispatch:
+    inputs:
+      month:
+        description: 'Month to compile (YYYY-MM format)'
+        required: false
+        type: string
+
+jobs:
+  compile-monthly:
+    name: Compile Monthly Report
+    runs-on: [self-hosted, liss7433]
+    
+    env:
+      OUTPUT_DIR: ${{ github.workspace }}/copilot-metrics/output
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install Python dependencies
+        run: pip install -r copilot-metrics/requirements.txt
+      
+      - name: Determine month to compile
+        id: month
+        run: |
+          if [ -n "${{ inputs.month }}" ]; then
+            echo "month=${{ inputs.month }}" >> $GITHUB_OUTPUT
+          else
+            # Default to previous month
+            echo "month=$(date -d 'last month' +%Y-%m)" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Compile monthly summary
+        run: |
+          python3 copilot-metrics/scripts/compile_monthly.py \
+            --output-dir "$OUTPUT_DIR" \
+            --month "${{ steps.month.outputs.month }}"
+      
+      - name: List output files
+        run: |
+          echo "Monthly compilation complete."
+          echo ""
+          echo "Contents of $OUTPUT_DIR/${{ steps.month.outputs.month }}:"
+          ls -la "$OUTPUT_DIR/${{ steps.month.outputs.month }}" || echo "Folder not found"
+      
+      - name: Upload monthly summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: monthly-summary-${{ steps.month.outputs.month }}
+          path: copilot-metrics/output/${{ steps.month.outputs.month }}/*_monthly_summary.xlsx
+          retention-days: 90

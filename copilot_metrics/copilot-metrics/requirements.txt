@@ -1,0 +1,4 @@
+# Python dependencies for Copilot Metrics scripts
+# Install with: pip install -r requirements.txt
+
+openpyxl>=3.1.0

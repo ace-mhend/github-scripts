@@ -1,0 +1,70 @@
+name: Daily Copilot Metrics
+on:
+  schedule:
+    # Run at 1 AM UTC daily
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+    inputs:
+      org:
+        description: 'Organization name (optional, uses default)'
+        required: false
+        type: string
+      days_back:
+        description: 'Days back to fetch'
+        required: false
+        default: '1'
+        type: string
+
+jobs:
+  fetch-metrics:
+    name: Fetch Daily Metrics
+    runs-on: [self-hosted, liss7433]
+    
+    env:
+      GITHUB_TOKEN: ${{ secrets.COPILOT_METRICS_TOKEN }}
+      ORG: ${{ inputs.org || 'AceHdw' }}
+      ENTERPRISE: ace-hardware
+      OUTPUT_DIR: ${{ github.workspace }}/copilot-metrics/output
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install Python dependencies
+        run: pip install -r copilot-metrics/requirements.txt
+      
+      - name: Make scripts executable
+        run: chmod +x copilot-metrics/scripts/*.sh
+      
+      - name: Create output directory
+        run: mkdir -p "$OUTPUT_DIR"
+      
+      - name: Fetch combined metrics
+        run: ./copilot-metrics/scripts/fetch_combined_metrics.sh "$ORG" "${{ inputs.days_back || '1' }}"
+      
+      - name: Export to Excel
+        run: python3 copilot-metrics/scripts/export_combined_metrics.py --output-dir "$OUTPUT_DIR" --days-back "${{ inputs.days_back || '1' }}"
+      
+      - name: List output files
+        run: |
+          echo "Generated files:"
+          ls -la "$OUTPUT_DIR"
+          if [ -d "$OUTPUT_DIR/$(date +%Y-%m)" ]; then
+            echo ""
+            echo "Monthly folder contents:"
+            ls -la "$OUTPUT_DIR/$(date +%Y-%m)"
+          fi
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: copilot-metrics-${{ github.run_id }}
+          path: |
+            copilot-metrics/output/*.json
+            copilot-metrics/output/**/*.xlsx
+          retention-days: 30

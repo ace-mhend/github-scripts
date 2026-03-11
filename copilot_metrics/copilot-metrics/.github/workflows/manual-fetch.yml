@@ -1,0 +1,145 @@
+name: Manual Fetch
+on:
+  workflow_dispatch:
+    inputs:
+      fetch_type:
+        description: 'Type of fetch to perform'
+        required: true
+        type: choice
+        options:
+          - combined
+          - user_metrics
+          - org_usage
+          - enterprise_usage
+          - all_orgs
+          - detailed_metrics
+          - date_range
+      
+      org:
+        description: 'Organization name'
+        required: false
+        default: 'AceHdw'
+        type: string
+      
+      scope:
+        description: 'Scope (for detailed_metrics/date_range): enterprise or org'
+        required: false
+        default: 'org'
+        type: choice
+        options:
+          - org
+          - enterprise
+      
+      start_date:
+        description: 'Start date (YYYY-MM-DD) for date_range'
+        required: false
+        type: string
+      
+      end_date:
+        description: 'End date (YYYY-MM-DD) for date_range'
+        required: false
+        type: string
+      
+      granularity:
+        description: 'Granularity for date_range'
+        required: false
+        default: 'day'
+        type: choice
+        options:
+          - day
+          - hour
+      
+      export_excel:
+        description: 'Export to Excel after fetch'
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  manual-fetch:
+    name: Manual Fetch - ${{ inputs.fetch_type }}
+    runs-on: [self-hosted, liss7433]
+    
+    env:
+      GITHUB_TOKEN: ${{ secrets.COPILOT_METRICS_TOKEN }}
+      ORG: ${{ inputs.org }}
+      ENTERPRISE: ace-hardware
+      OUTPUT_DIR: ${{ github.workspace }}/copilot-metrics/output
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install Python dependencies
+        run: pip install -r copilot-metrics/requirements.txt
+      
+      - name: Make scripts executable
+        run: chmod +x copilot-metrics/scripts/*.sh
+      
+      - name: Create output directory
+        run: mkdir -p "$OUTPUT_DIR"
+      
+      - name: Fetch - Combined Metrics
+        if: inputs.fetch_type == 'combined'
+        run: ./copilot-metrics/scripts/fetch_combined_metrics.sh "$ORG"
+      
+      - name: Fetch - User Metrics
+        if: inputs.fetch_type == 'user_metrics'
+        run: ./copilot-metrics/scripts/fetch_user_metrics.sh "$ORG"
+      
+      - name: Fetch - Org Usage
+        if: inputs.fetch_type == 'org_usage'
+        run: ./copilot-metrics/scripts/fetch_org_usage.sh "$ORG"
+      
+      - name: Fetch - Enterprise Usage
+        if: inputs.fetch_type == 'enterprise_usage'
+        run: ./copilot-metrics/scripts/fetch_enterprise_usage.sh
+      
+      - name: Fetch - All Orgs
+        if: inputs.fetch_type == 'all_orgs'
+        run: ./copilot-metrics/scripts/fetch_all_orgs.sh
+      
+      - name: Fetch - Detailed Metrics
+        if: inputs.fetch_type == 'detailed_metrics'
+        run: |
+          ./copilot-metrics/scripts/fetch_detailed_metrics.sh \
+            "${{ inputs.scope }}" \
+            "${{ inputs.scope == 'enterprise' && 'ace-hardware' || inputs.org }}"
+      
+      - name: Fetch - Date Range
+        if: inputs.fetch_type == 'date_range'
+        run: |
+          ./copilot-metrics/scripts/fetch_usage_daterange.sh \
+            "${{ inputs.scope }}" \
+            "${{ inputs.scope == 'enterprise' && 'ace-hardware' || inputs.org }}" \
+            "${{ inputs.start_date }}" \
+            "${{ inputs.end_date }}" \
+            "${{ inputs.granularity }}"
+      
+      - name: Export to Excel
+        if: inputs.export_excel && (inputs.fetch_type == 'combined' || inputs.fetch_type == 'user_metrics')
+        run: |
+          if [ "${{ inputs.fetch_type }}" == "combined" ]; then
+            python3 copilot-metrics/scripts/export_combined_metrics.py --output-dir "$OUTPUT_DIR"
+          elif [ "${{ inputs.fetch_type }}" == "user_metrics" ]; then
+            python3 copilot-metrics/scripts/export_user_metrics.py --output-dir "$OUTPUT_DIR"
+          fi
+      
+      - name: List output files
+        run: |
+          echo "Generated files:"
+          ls -la "$OUTPUT_DIR"
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: manual-fetch-${{ inputs.fetch_type }}-${{ github.run_id }}
+          path: |
+            copilot-metrics/output/*.json
+            copilot-metrics/output/**/*.xlsx
+          retention-days: 30
