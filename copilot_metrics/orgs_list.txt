@@ -1,0 +1,15 @@
+# List of organizations to fetch Copilot usage data for
+# One organization name per line
+# Lines starting with # are comments and will be skipped
+
+# Example organizations (replace with your actual org names):
+# my-org-1
+# my-org-2
+# my-org-3
+
+AceHdw
+AceHardware
+AceHardwareAutomation
+AceHardwareCorp
+AceHardwareTest
+AHSS-Ace-Hardware
