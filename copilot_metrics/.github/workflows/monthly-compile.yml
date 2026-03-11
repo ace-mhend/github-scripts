@@ -46,6 +46,12 @@ jobs:
             --output-dir "$OUTPUT_DIR" \
             --month "${{ steps.month.outputs.month }}"
       
+      - name: Export to CSV
+        run: |
+          python3 copilot-metrics/scripts/export_to_csv.py \
+            --output-dir "$OUTPUT_DIR" \
+            --month "${{ steps.month.outputs.month }}"
+      
       - name: List output files
         run: |
           echo "Monthly compilation complete."
@@ -57,5 +63,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: monthly-summary-${{ steps.month.outputs.month }}
-          path: copilot-metrics/output/${{ steps.month.outputs.month }}/*_monthly_summary.xlsx
+          path: |
+            copilot-metrics/output/${{ steps.month.outputs.month }}/*_monthly_summary.xlsx
+            copilot-metrics/output/${{ steps.month.outputs.month }}/*.csv
           retention-days: 90
