@@ -18,7 +18,7 @@ on:
 jobs:
   fetch-metrics:
     name: Fetch Daily Metrics
-    runs-on: [self-hosted, liss7433]
+    runs-on: [self-hosted, lliss0768]
     
     env:
       GITHUB_TOKEN: ${{ secrets.COPILOT_METRICS_TOKEN }}

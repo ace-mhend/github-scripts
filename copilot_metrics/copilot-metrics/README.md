@@ -4,7 +4,7 @@ Automated GitHub Copilot metrics collection running via GitHub Actions on a self
 
 ## Overview
 
-This module fetches Copilot usage metrics from the GitHub API and generates Excel reports. It runs on a self-hosted runner (`liss7433`) with scheduled cron triggers.
+This module fetches Copilot usage metrics from the GitHub API and generates Excel reports. It runs on a self-hosted runner (`lliss0768`) with scheduled cron triggers.
 
 ## Directory Structure
 
@@ -38,7 +38,7 @@ copilot-metrics/
 
 ### 1. Register Self-Hosted Runner
 
-On `liss7433`, register a GitHub Actions runner:
+On `lliss0768`, register a GitHub Actions runner:
 
 ```bash
 # Download runner
@@ -47,7 +47,7 @@ curl -o actions-runner-linux-x64-2.311.0.tar.gz -L https://github.com/actions/ru
 tar xzf ./actions-runner-linux-x64-2.311.0.tar.gz
 
 # Configure (get token from repo Settings → Actions → Runners → New self-hosted runner)
-./config.sh --url https://github.com/AceHdw/github-scripts --token YOUR_TOKEN --labels liss7433
+./config.sh --url https://github.com/ace-mhend/copilot --token YOUR_TOKEN --labels lliss0768
 
 # Install as service
 sudo ./svc.sh install

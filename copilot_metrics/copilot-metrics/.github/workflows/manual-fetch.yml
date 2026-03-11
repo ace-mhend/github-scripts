@@ -58,7 +58,7 @@ on:
 jobs:
   manual-fetch:
     name: Manual Fetch - ${{ inputs.fetch_type }}
-    runs-on: [self-hosted, liss7433]
+    runs-on: [self-hosted, lliss0768]
     
     env:
       GITHUB_TOKEN: ${{ secrets.COPILOT_METRICS_TOKEN }}

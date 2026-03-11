@@ -13,7 +13,7 @@ on:
 jobs:
   compile-monthly:
     name: Compile Monthly Report
-    runs-on: [self-hosted, liss7433]
+    runs-on: [self-hosted, lliss0768]
     
     env:
       OUTPUT_DIR: ${{ github.workspace }}/copilot-metrics/output
